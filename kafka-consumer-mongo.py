@@ -31,7 +31,7 @@ try:
     client.admin.command('ping')
     print("Pinged your deployment. You successfully connected to MongoDB!")
 
-    db = client.nosql
+    db = client.python
     print("MongoDB Connected successfully!")
 except:
     print("Could not connect to MongoDB")
@@ -55,14 +55,14 @@ for msg in consumer:
             'comment': comment
         }
         print(comment_rec)
-        comment_id = db.nosql_comments.insert_one(comment_rec)
+        comment_id = db.socer_comments.insert_one(comment_rec)
         print("Comment inserted with record ids", comment_id)
     except Exception as e:
         print("Could not insert into MongoDB:")
 
     # Create bdnosql_sumary and insert groups into mongodb
     try:
-        agg_result = db.nosql_comments.aggregate([
+        agg_result = db.socer_comments.aggregate([
               {
          "$group": {
                 "_id": {
@@ -74,10 +74,10 @@ for msg in consumer:
         }
     ])
 
-        db.nosql_sumaryComments.delete_many({})
+        db.socer_sumaryComments.delete_many({})
         for i in agg_result:
             print(i)
-            sumaryComments_id = db.nosql_sumaryComments.insert_one(i)
+            sumaryComments_id = db.socer_sumaryComments.insert_one(i)
             print("Sumary Comments inserted with record ids: ", sumaryComments_id)
     except Exception as e:
         print(f'group vy cought {type(e)}: ')
