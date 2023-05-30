@@ -5,12 +5,9 @@
 from kafka import KafkaConsumer
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
+
 import json
-import subprocess
 
-
-
-# replace here with your mongodb url 
 uri = "mongodb+srv://erick:1234@python.aj67na4.mongodb.net/?retryWrites=true&w=majority"
 
 
@@ -26,8 +23,9 @@ uri = "mongodb+srv://erick:1234@python.aj67na4.mongodb.net/?retryWrites=true&w=m
 
 # Connect to MongoDB and pizza_data database
 
+
 try:
-    client = MongoClient(uri, server_api=ServerApi('1'))
+    client = MongoClient(uri)
     client.admin.command('ping')
     print("Pinged your deployment. You successfully connected to MongoDB!")
 
@@ -36,49 +34,83 @@ try:
 except:
     print("Could not connect to MongoDB")
 
-consumer = KafkaConsumer('comments',bootstrap_servers=[
-     'my-kafka-0.my-kafka-headless.er1ck-esp1n0sa.svc.cluster.local:9092'
-    ])
-# Parse received data from Kafka
-for msg in consumer:
+#Para consumir el topic comments
+consumerComments = KafkaConsumer('comments',bootstrap_servers=['my-kafka-0.my-kafka-headless.er1ck-esp1n0sa.svc.cluster.local:9092']) 
+for msg in consumerComments:
     record = json.loads(msg.value)
     print(record)
-    userId = record["userId"]
-    objectId = record["objectId"]
-    comment = record["comment"]
 
-    # Create dictionary and ingest data into MongoDB
+    info = {'name':record['name'],
+    'publication':record['publication'],
+    'comment':record['comment']}
+
     try:
-        comment_rec = {
-            'userId': userId,
-            'objectId': objectId,
-            'comment': comment
-        }
-        print(comment_rec)
-        comment_id = db.socer_comments.insert_one(comment_rec)
-        print("Comment inserted with record ids", comment_id)
-    except Exception as e:
-        print("Could not insert into MongoDB:")
+        info_id = db.comments_info.insert_one(info)
+        print("Data inserted with record ids", info_id)
+    except:
+        print("Could not insert into MongoDB")
 
-    # Create bdnosql_sumary and insert groups into mongodb
     try:
-        agg_result = db.socer_comments.aggregate([
-              {
-         "$group": {
-                "_id": {
-                    "objectId": "$objectId",
-                    "comment": "$comment"
-                },
-                "n": {"$sum": 1}
-            }
-        }
-    ])
-
-        db.socer_sumaryComments.delete_many({})
+        agg_result = db.comments_info.aggregate(
+            [{
+                "$group" : { "_id" : "$publication",
+                             "total":{"$sum":1}
+                            }
+            }]
+        )
+        db.comments_summary.delete_many({})
         for i in agg_result:
             print(i)
-            sumaryComments_id = db.socer_sumaryComments.insert_one(i)
-            print("Sumary Comments inserted with record ids: ", sumaryComments_id)
+            summary_id = db.comments_summary.insert_one(i)
+            print("Summary inserted with record ids", summary_id)
     except Exception as e:
-        print(f'group vy cought {type(e)}: ')
+        print(f'group by caught {type(e)}: ')
         print(e)
+        print("Could not insert into MongoDB")
+
+#consumer = KafkaConsumer('comments',bootstrap_servers=[
+ #    'my-kafka-0.my-kafka-headless.er1ck-esp1n0sa.svc.cluster.local:9092'
+  #  ])
+# Parse received data from Kafka
+#for msg in consumer:
+ #   record = json.loads(msg.value)
+  #  print(record)
+   # userId = record["userId"]
+   # objectId = record["objectId"]
+   # comment = record["comment"]
+
+    # Create dictionary and ingest data into MongoDB
+    #try:
+     #   comment_rec = {
+      #      'userId': userId,
+       #     'objectId': objectId,
+        #    'comment': comment
+        #}
+        #print(comment_rec)
+        #comment_id = db.socer_comments.insert_one(comment_rec)
+        #print("Comment inserted with record ids", comment_id)
+    #except Exception as e:
+     #   print("Could not insert into MongoDB:")
+
+    # Create bdnosql_sumary and insert groups into mongodb
+    #try:
+     #   agg_result = db.socer_comments.aggregate([
+      #        {
+       #  "$group": {
+        #        "_id": {
+         #           "objectId": "$objectId",
+          #          "comment": "$comment"
+           #     },
+            #    "n": {"$sum": 1}
+            #}
+       # }
+    #])
+
+     #   db.socer_sumaryComments.delete_many({})
+      #  for i in agg_result:
+       #     print(i)
+        #    sumaryComments_id = db.socer_sumaryComments.insert_one(i)
+         #   print("Sumary Comments inserted with record ids: ", sumaryComments_id)
+    #except Exception as e:
+     #   print(f'group vy cought {type(e)}: ')
+      #  print(e)
