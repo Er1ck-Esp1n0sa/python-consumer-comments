@@ -28,14 +28,14 @@ try:
     client.admin.command('ping')
     print("Pinged your deployment. You successfully connected to MongoDB!")
 
-    db = client.bdnosql
+    db = client.python
     print("MongoDB Connected successfully!")
 except Exception as e:
     print("Could not connect to MongoDB: ", e)
 
 
 consumer = KafkaConsumer('comments', bootstrap_servers=[
-'my-kafka-0.my-kafka-headless.jona27081.svc.cluster.local:9092'])
+'my-kafka-0.my-kafka-headless.er1ck-esp1n0sa.svc.cluster.local:9092'])
 # Parse received data from Kafka
 for msg in consumer:
     record = json.loads(msg.value)
